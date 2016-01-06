@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<config>
+  <account username='elisa@real.com' passwd='456123'></account>
+  <uaserver ip='127.0.0.1' puerto='6549'></uaserver>
+  <rtpaudio puerto='2020'></rtpaudio>
+  <regproxy ip='' puerto='1234'></regproxy>
+  <log path='log.json'></log>
+  <audio path='cancion.mp3'></audio>
+</config>
