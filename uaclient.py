@@ -41,7 +41,8 @@ try:
         date_time(list, 'Starting...', '', IP, PORT)
         LOGIN = list['account']['username']
         EXPIRES = sys.argv[3]
-        LINE = METODO + ' ' + 'sip:' + LOGIN + ':' + port_serv + ' ' + 'SIP/2.0' + '\r\n'
+        LINE = METODO + ' ' + 'sip:' + LOGIN + ':' + port_serv + ' '
+        LINE = LINE + 'SIP/2.0' + '\r\n'
         LINE = LINE + 'Expires: ' + EXPIRES
         date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
@@ -50,7 +51,8 @@ try:
     elif METODO == 'INVITE':
         LOGIN = sys.argv[3]
         msn = ('Content-Type: application/sdp' + '\r\n\r\n' + 'v=0' + '\r\n'
-              + 'o=' + list['account']['username'] + ' ' + list['uaserver']['ip'] + '\r\n'
+              + 'o=' + list['account']['username'] + ' '
+              + list['uaserver']['ip'] + '\r\n'
               + 's=misesion' + '\r\n' + 't=0' + '\r\n' + 'm=audio '
               + list['rtpaudio']['puerto'] + ' ' + 'RTP' + '\r\n' )
 
@@ -75,7 +77,8 @@ try:
         m = hashlib.md5()
         m.update(passwd + nonce)
         response = m.hexdigest()
-        LINE = LINE +  '\r\n' + 'Authorization: Digest response=' + '"' + response + '"'
+        LINE = LINE +  '\r\n' + 'Authorization: Digest response='
+        LINE = LINE + '"' + response + '"'
         date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE,'utf-8'))
         data = my_socket.recv(1024)
