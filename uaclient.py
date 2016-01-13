@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 import hashlib
 import time
 import os
+from proxy_registrar import date_time
 
 
 
@@ -29,21 +30,6 @@ METODO = sys.argv[2]
 IP = list['regproxy']['ip']
 PORT = int(list['regproxy']['puerto'])
 
-def date_time(linea, opcion, IP, PORT):
-    fichero = list['log']['path']
-    outfile = open(fichero, 'a')
-    fecha = time.strftime('%Y%m%d%H%M%S' , time.gmtime())
-    linea = linea.replace('\r\n\r\n', ' ')
-    linea = linea.replace('\r\n', ' ')
-    if opcion == 'send':
-        linea = 'Send to ' + IP + ':' + str(PORT) + ': ' + linea
-    elif opcion == 'receive':
-        linea = 'Received from ' + IP + ':' + str(PORT) + ': ' + linea
-    fecha = fecha + ' ' + linea + '\n'
-    outfile.write(fecha)
-    outfile.close()
-
-date_time('Starting...', '', IP, PORT)
 
 try:
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -52,14 +38,15 @@ try:
 
 
     if METODO == 'REGISTER':
+        date_time(list, 'Starting...', '', IP, PORT)
         LOGIN = list['account']['username']
         EXPIRES = sys.argv[3]
         LINE = METODO + ' ' + 'sip:' + LOGIN + ':' + port_serv + ' ' + 'SIP/2.0' + '\r\n'
         LINE = LINE + 'Expires: ' + EXPIRES
-        date_time(LINE, 'send', IP, PORT)
+        date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
         data = my_socket.recv(1024)
-        date_time(data.decode('utf-8'), 'receive', IP, PORT)
+        date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
 
 
     elif METODO == 'INVITE':
@@ -70,18 +57,18 @@ try:
               + list['rtpaudio']['puerto'] + ' ' + 'RTP' + '\r\n' )
 
         LINE = METODO + ' ' + 'sip:' + LOGIN + ' SIP/2.0' + '\r\n' + msn
-        date_time(LINE, 'send', IP, PORT)
+        date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
         data = my_socket.recv(1024)
-        date_time(data.decode('utf-8'), 'receive', IP, PORT)
+        date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
 
     elif METODO == 'BYE':
         LOGIN = sys.argv[3]
         LINE = 'BYE' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0' + '\r\n'
-        date_time(LINE, 'send', IP, PORT)
+        date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE,'utf-8'))
         data = my_socket.recv(1024)
-        date_time(data.decode('utf-8'), 'receive', IP, PORT)
+        date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
 
     response_msg = data.decode('utf-8')
 
@@ -94,17 +81,16 @@ try:
         m.update(passwd + nonce)
         response = m.hexdigest()
         LINE = LINE +  '\r\n' + 'Authorization: Digest response=' + '"' + response + '"'
-        date_time(LINE, 'send', IP, PORT)
+        date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE,'utf-8'))
         data = my_socket.recv(1024)
-        print(data.decode('utf-8'))
 
 
     elif ('100 Trying' in response_msg and '180 Ring' in response_msg
         and '200 OK' in response_msg):
         ip = response_msg.split(' ')[10].split('\r\n')[0]
         puerto = response_msg.split(' ')[11]
-        date_time(response_msg, 'receive', IP, PORT)
+        date_time(list, response_msg, 'receive', IP, PORT)
         LINE = 'ACK' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0' + '\r\n'
         my_socket.send(bytes(LINE,'utf-8'))
         print('Enviando RTP')
@@ -112,7 +98,10 @@ try:
         rtp_msn = './mp32rtp -i ' +ip + ' -p ' + puerto
         rtp_msn = rtp_msn + ' < ' + list['audio']['path']
         os.system(rtp_msn)
-        date_time(LINE, 'send', IP, PORT)
+        listen = 'cvlc rtp://@' + ip + ':' + puerto
+        listen = listen + ' 2> /dev/null &'
+        os.system(listen)
+        date_time(list, LINE, 'send', IP, PORT)
         data = my_socket.recv(1024)
 
 
@@ -120,7 +109,7 @@ try:
 
 except ConnectionRefusedError:
     linea = ' Error: No server listening at'
-    date_time(linea, '', IP, PORT)
+    date_time(list, linea, '', IP, PORT)
     sys.exit('No server listening')
 
 my_socket.close()
