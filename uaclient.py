@@ -43,12 +43,13 @@ def date_time(linea, opcion, IP, PORT):
     outfile.write(fecha)
     outfile.close()
 
+date_time('Starting...', '', IP, PORT)
+
 try:
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.connect((IP, PORT))
 
-    date_time('Starting...', '', IP, PORT)
 
     if METODO == 'REGISTER':
         LOGIN = list['account']['username']
@@ -68,25 +69,31 @@ try:
               + 's=misesion' + '\r\n' + 't=0' + '\r\n' + 'm=audio '
               + list['rtpaudio']['puerto'] + ' ' + 'RTP' + '\r\n' )
 
-        LINE = METODO + ' ' + 'sip:' + LOGIN + ':' + ' SIP/2.0' + '\r\n' + msn
+        LINE = METODO + ' ' + 'sip:' + LOGIN + ' SIP/2.0' + '\r\n' + msn
         date_time(LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
         data = my_socket.recv(1024)
         date_time(data.decode('utf-8'), 'receive', IP, PORT)
 
+    elif METODO == 'BYE':
+        LOGIN = sys.argv[3]
+        LINE = 'BYE' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0' + '\r\n'
+        date_time(LINE, 'send', IP, PORT)
+        my_socket.send(bytes(LINE,'utf-8'))
+        data = my_socket.recv(1024)
+        date_time(data.decode('utf-8'), 'receive', IP, PORT)
 
     response_msg = data.decode('utf-8')
 
 
     if '401 Unauthorized' in response_msg:
         date_time(response_msg, 'receive', IP, PORT)
-        print(response_msg)
-        nonce = bytes(response_msg.split()[5].split('=')[1],'utf-8')
+        nonce = bytes(response_msg.split()[5].split('=')[1].strip('"'),'utf-8')
         passwd = bytes(list['account']['passwd'],'utf-8')
         m = hashlib.md5()
         m.update(passwd + nonce)
         response = m.hexdigest()
-        LINE = LINE +  '\r\n' + 'Authorization:' + 'response=' + response
+        LINE = LINE +  '\r\n' + 'Authorization: Digest response=' + '"' + response + '"'
         date_time(LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE,'utf-8'))
         data = my_socket.recv(1024)
