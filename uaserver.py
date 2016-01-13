@@ -9,26 +9,13 @@ import sys
 import os
 import time
 import xml.etree.ElementTree as ET
-
+from proxy_registrar import date_time
 
 
 class EchoHandler(socketserver.DatagramRequestHandler):
     """
     Echo server class
     """
-    def date_time(self, linea, opcion, IP, PORT):
-        fichero = list['log']['path']
-        outfile = open(fichero, 'a')
-        fecha = time.strftime('%Y%m%d%H%M%S' , time.gmtime())
-        linea = linea.replace('\r\n\r\n', ' ')
-        linea = linea.replace('\r\n', ' ')
-        if opcion == 'send':
-            linea = 'Send to ' + IP + ':' + str(PORT) + ': ' + linea
-        elif opcion == 'receive':
-            linea = 'Received from ' + IP + ':' + str(PORT) + ': ' + linea
-        fecha = fecha + ' ' + linea + '\n'
-        outfile.write(fecha)
-        outfile.close()
 
     dicc = {}
     def handle(self):
@@ -47,11 +34,10 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 info_user['puerto'] = lista[14]
                 info_user['ip'] = lista[10]
                 self.dicc[lista[1].split(':')[1]] = info_user
-                print(self.dicc)
 
 
             if 'INVITE' in lista:
-                self.date_time(linea, 'receive', IP, PUERTO)
+                date_time(list, linea, 'receive', IP, PUERTO)
                 msn = ('Content-Type: application/sdp' + '\r\n\r\n' + 'v=0' + '\r\n'
                       + 'o=' + list['account']['username'] + ' ' + list['uaserver']['ip'] + '\r\n'
                       + 's=misesion' + '\r\n' + 't=0' + '\r\n' + 'm=audio '
@@ -61,21 +47,24 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                       + '\r\n\r\n' + 'SIP/2.0 200 OK' + '\r\n' + msn
                       + '\r\n')
                 self.wfile.write(bytes(LINE, 'utf-8'))
-                self.date_time(LINE, 'send', IP, PUERTO)
+                date_time(list, LINE, 'send', IP, PUERTO)
 
 
             elif 'ACK' in lista:
-                self.date_time(linea, 'receive', IP, PUERTO)
+                date_time(list, linea, 'receive', IP, PUERTO)
                 login = lista[1].split(':')[1]
+                listen = 'cvlc rtp://@' + ip + ':' + puerto
+                listen = listen + ' 2> /dev/null &'
+                os.system(listen)
                 rtp_msn = './mp32rtp -i ' + self.dicc[login]['ip'] + ' -p ' + self.dicc[login]['puerto']
                 rtp_msn = rtp_msn + ' < ' + list['audio']['path']
                 os.system(rtp_msn)
 
             elif 'BYE' in lista:
-                self.date_time(linea, 'receive', IP, PUERTO)
+                date_time(list, linea, 'receive', IP, PUERTO)
                 LINE = 'SIP/2.0 200 OK'+ '\r\n\r\n'
                 self.wfile.write(bytes(LINE, 'utf-8'))
-                self.date_time(LINE, 'send', IP, PUERTO)
+                date_time(list, LINE, 'send', IP, PUERTO)
 
 if __name__ == "__main__":
 
