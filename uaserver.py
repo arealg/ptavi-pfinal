@@ -40,12 +40,15 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 break
             linea = line.decode('utf-8')
             lista = linea.split()
+            print(lista)
 
             if 'Content-Type:' in lista:
                 info_user = {}
-                info_user['puerto'] = lista[11]
-                info_user['ip'] = lista[7]
+                info_user['puerto'] = lista[14]
+                info_user['ip'] = lista[10]
                 self.dicc[lista[1].split(':')[1]] = info_user
+                print(self.dicc)
+
 
             if 'INVITE' in lista:
                 self.date_time(linea, 'receive', IP, PUERTO)
@@ -56,7 +59,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 LINE = ('SIP/2.0 100 Trying'
                       + '\r\n\r\n' + 'SIP/2.0 180 Ring'
                       + '\r\n\r\n' + 'SIP/2.0 200 OK' + '\r\n' + msn
-                      + '\r\n\r\n')
+                      + '\r\n')
                 self.wfile.write(bytes(LINE, 'utf-8'))
                 self.date_time(LINE, 'send', IP, PUERTO)
 
