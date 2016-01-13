@@ -45,8 +45,6 @@ try:
         LINE = LINE + 'Expires: ' + EXPIRES
         date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
-        data = my_socket.recv(1024)
-        date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
 
 
     elif METODO == 'INVITE':
@@ -59,22 +57,19 @@ try:
         LINE = METODO + ' ' + 'sip:' + LOGIN + ' SIP/2.0' + '\r\n' + msn
         date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
-        data = my_socket.recv(1024)
-        date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
+
 
     elif METODO == 'BYE':
         LOGIN = sys.argv[3]
         LINE = 'BYE' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0' + '\r\n'
         date_time(list, LINE, 'send', IP, PORT)
         my_socket.send(bytes(LINE,'utf-8'))
-        data = my_socket.recv(1024)
-        date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
 
+    data = my_socket.recv(1024)
     response_msg = data.decode('utf-8')
-
+    date_time(list, response_msg, 'receive', IP, PORT)
 
     if '401 Unauthorized' in response_msg:
-        date_time(response_msg, 'receive', IP, PORT)
         nonce = bytes(response_msg.split()[5].split('=')[1].strip('"'),'utf-8')
         passwd = bytes(list['account']['passwd'],'utf-8')
         m = hashlib.md5()
@@ -86,11 +81,11 @@ try:
         data = my_socket.recv(1024)
 
 
+
     elif ('100 Trying' in response_msg and '180 Ring' in response_msg
         and '200 OK' in response_msg):
         ip = response_msg.split(' ')[10].split('\r\n')[0]
         puerto = response_msg.split(' ')[11]
-        date_time(list, response_msg, 'receive', IP, PORT)
         LINE = 'ACK' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0' + '\r\n'
         my_socket.send(bytes(LINE,'utf-8'))
         print('Enviando RTP')
@@ -105,7 +100,11 @@ try:
         data = my_socket.recv(1024)
 
 
+
+    date_time(list, data.decode('utf-8'), 'receive', IP, PORT)
+    print(data.decode('utf-8'))
     my_socket.close()
+
 
 except ConnectionRefusedError:
     linea = ' Error: No server listening at'
