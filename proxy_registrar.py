@@ -166,7 +166,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             LINE = ("SIP/2.0 400 Bad Request" + '\r\n')
             error = True
         except:
-            print('EXCEPT SIN NADA')
             LINE = ("SIP/2.0 400 Bad Request" + '\r\n')
             error = True
         if error :
@@ -201,7 +200,8 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     puerto = lista[1].split(':')[2]
                     expires = lista[4]
                     date_time(list, linea, 'receive', IP, PUERTO)
-                    if len(lista) >= 7 and lista[5].split(':')[0] == 'Authorization':
+                    if (len(lista) >= 7 and
+                       lista[5].split(':')[0] == 'Authorization'):
                         response = lista[7].split('=')[1].strip('"')
                         resp_proxy= self.response_equal(login)
                         if resp_proxy == response:
@@ -217,11 +217,13 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                         if login in self.dicc_passwd:
                             self.dicc_passwd[login]['nonce'] = nonce
                         else:
-                            LINE = ("SIP/2.0 404 Not Found (User not found)" + '\r\n')
+                            LINE = ("SIP/2.0 404 Not Found (User not found)" )
+                            LINE = LINE + '\r\n'
                             date_time(list, LINE, 'send', IP, PUERTO)
                             self.wfile.write(bytes(LINE,'utf-8'))
                         with open('passwd.json', 'w') as file:
-                            json.dump(self.dicc_passwd, file, sort_keys=True, indent=4)
+                            json.dump(self.dicc_passwd, file, sort_keys=True,
+                                      indent=4)
                         LINE = "SIP/2.0 401 Unauthorized" + '\r\n'
                         LINE = LINE + 'WWW-Authenticate: Digest '+  'nonce='
                         LINE = LINE + '"' + nonce + '"' + '\r\n\r\n'
