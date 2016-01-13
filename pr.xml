@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <config>
-  <server ip='' puerto='1234'></server>
+  <server ip='127.0.0.1' puerto='1234'></server>
   <database path='registered.json' passwdpath=''></database>
-  <log path='log.json'></log>
+  <log path='log_pr.txt'></log>
 </config>
