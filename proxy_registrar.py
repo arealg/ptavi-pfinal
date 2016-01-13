@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-Clase (y programa principal) para un servidor de eco en UDP simple
+Clase (y programa princIPal) para un servidor de eco en UDP simple
 """
 
 import socketserver
@@ -73,25 +73,31 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         outfile.write(fecha)
         outfile.close()
 
-    def msn2clientserver (self, lista, linea, ip, puerto):
-        user = lista[1].split(':')[1]
+    dicc_bye = {}
+    def msn2clientserver (self, lista, linea, IP, puerto):
+        try:
+            user = lista[1].split(':')[1]
+            if user in self.dicc:
+                PORT = int(self.dicc[user]['puerto'])
+                IP = self.dicc[user]['address']
+                self.date_time(linea, 'receive', IP, puerto)
+                my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                my_socket.connect((IP, PORT))
+                self.date_time(linea, 'send', IP, PORT)
+                my_socket.send(bytes(linea, 'utf-8') + b'\r\n')
+                data = my_socket.recv(1024)
+                return data
+                my_socket.close()
+            else:
+                LINE = ("SIP/2.0 404 Not Found (User not found)" + '\r\n')
+                self.date_time(LINE, 'send', IP, puerto)
+                self.wfile.write(bytes(LINE,'utf-8'))
+        except ConnectionRefusedError:
+                LINE = ("SIP/2.0 603 Decline" + '\r\n')
+                self.date_time(LINE, 'send', IP, puerto)
+                self.wfile.write(bytes(LINE,'utf-8'))
 
-        if user in self.dicc:
-            PORT = int(self.dicc[user]['puerto'])
-            IP = self.dicc[user]['address']
-            self.date_time(linea, 'receive', IP, PORT)
-            my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            my_socket.connect((IP, PORT))
-            self.date_time(linea, 'send', IP, PORT)
-            my_socket.send(bytes(linea, 'utf-8') + b'\r\n')
-            data = my_socket.recv(1024)
-            return data
-            my_socket.close()
-        else:
-            LINE = ("SIP/2.0 404 Not Found (User not found)" + '\r\n')
-            self.date_time(LINE, 'send', ip, puerto)
-            self.wfile.write(bytes(LINE,'utf-8'))
 
 
     dicc_passwd = {}
@@ -109,51 +115,75 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         resp_proxy = m.hexdigest()
         return resp_proxy
 
-    def not_login (self, login, expires, ip, puerto):
+    def not_login (self, login, expires, IP, puerto):
         if expires == '0' and not login in self.dicc:
             LINE = ("SIP/2.0 404 Not Found (User not found)" + '\r\n')
-            self.date_time(LINE, 'send', ip, puerto)
+            self.date_time(LINE, 'send', IP, puerto)
             self.wfile.write(bytes(LINE,'utf-8'))
             return True
 
-    def error(self, ip, PUERTO, puerto):
+    def error(self, IP, PUERTO, lista, metodo):
+        error = False
         try:
-            puerto = int(puerto)
-            ip = ip.split('.')
-            for i in ip:
-                int(i)
+            if ('sip' in lista[1].split(':') and
+                   'SIP/2.0' in lista and '@' in lista[1]):
+                if metodo == 'REGISTER':
+                    puerto = int(lista[1].split(':')[2])
+                elif metodo == 'INVITE':
+                    ip = lista[7]
+                    for i in ip.split('.'):
+                        int(i)
+                elif metodo == 'BYE':
+                    login = lista[1].split(':')[1]
+                    if (not login == self.dicc_bye['emisor'] or not
+                       login == self.dicc_bye['receptor']):
+                        raise KeyError
+            else:
+                raise TypeError
+
+        except KeyError:
+            LINE = ("SIP/2.0 No pertenece a la conversacion" + '\r\n')
+
+        except TypeError:
+            LINE = ("SIP/2.0 400 Bad Request" + '\r\n')
+            error = True
         except:
             LINE = ("SIP/2.0 400 Bad Request" + '\r\n')
-            self.date_time(LINE, 'send', ip, PUERTO)
+            error = True
+        if error :
+            self.date_time(LINE, 'send', IP, PUERTO)
             self.wfile.write(bytes(LINE,'utf-8'))
-            return True
-
+            return error
 
     def handle(self):
         """
         Se identifica al cliente y se registra en un diccionario.
         """
         self.json2registered()
-        ip = self.client_address[0]
+        IP = self.client_address[0]
         PUERTO = self.client_address[1]
-        # print("{} {}".format(IP, PUERTO))
         while 1:
             line = self.rfile.read()
             if not line:
                 break
             linea = line.decode('utf-8')
             lista = linea.split()
-            self.date_time('Starting...', '', ip, PUERTO)
+            if lista[0] == 'INVITE' or lista[0] == 'ACK' or lista[0] == 'BYE' or lista[0] == 'REGISTER':
+                pass
+            else:
+                LINE = 'SIP/2.0 405 Method Not Allowed'+'\r\n\r\n'
+                self.wfile.write(bytes(LINE, 'utf-8'))
+                self.date_time(LINE, 'send', IP, PUERTO)
             if 'REGISTER' in lista:
-                print(lista)
                 login = lista[1].split(':')[1]
                 puerto = lista[1].split(':')[2]
                 expires = lista[4]
-                self.date_time(linea, 'receive', ip, PUERTO)
+                self.date_time(linea, 'receive', IP, PUERTO)
                 self.tiempo_exp()
-                if not self.not_login(login, expires, ip, PUERTO) and not self.error(ip, PUERTO, puerto):
-                    if len(lista) >= 6 and lista[5].split(':')[0] == 'Authorization':
-                        response = lista[5].split(':')[1].split('=')[1]
+                if (not self.not_login(login, expires, IP, PUERTO) and not
+                  self.error(IP ,PUERTO, lista,'REGISTER')):
+                    if len(lista) >= 7 and lista[5].split(':')[0] == 'Authorization':
+                        response = lista[7].split('=')[1].strip('"')
                         resp_proxy= self.response_equal(login)
                         if resp_proxy == response:
                             self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
@@ -173,29 +203,35 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                         with open('passwd.json', 'w') as file:
                             json.dump(self.dicc_passwd, file, sort_keys=True, indent=4)
                         LINE = ("SIP/2.0 401 Unauthorized" + '\r\n'
-                               + 'WWWW Authenticate:'+ ' '+  'nonce=' + nonce  + '\r\n')
-                        self.date_time(LINE, 'send', ip, PUERTO)
+                               + 'WWW-Authenticate: Digest '+  'nonce=' + '"' + nonce + '"' + '\r\n\r\n')
+                        self.date_time(LINE, 'send', IP, PUERTO)
                         self.wfile.write(bytes(LINE,'utf-8'))
                         tiempo = time.time() + float(expires)
-                        self.registrar_cliente(ip, login, tiempo, puerto)
+                        self.registrar_cliente(IP, login, tiempo, puerto)
                 self.register2json()
 
             if 'INVITE' in lista:
-                print(lista)
+                self.error(IP ,PUERTO, lista,'INVITE')
                 login = lista[1].split(':')[1]
+                origen = lista[6].split('=')[1]
+                self.dicc_bye['receptor'] = login
+                self.dicc_bye['emisor'] = origen
                 if login in self.dicc:
-                    data = self.msn2clientserver(lista, linea, ip, PUERTO)
+                    data = self.msn2clientserver(lista, linea, IP, PUERTO)
                     if data != None:
                         self.wfile.write(data)
                 else:
                     LINE = ("SIP/2.0 404 Not Found (User not found)" + '\r\n')
-                    self.date_time(LINE, 'send', ip, puerto)
+                    self.date_time(LINE, 'send', IP, PUERTO)
                     self.wfile.write(bytes(LINE,'utf-8'))
 
             elif 'ACK' in lista:
-                self.msn2clientserver(lista, linea, ip, PUERTO)
+                self.error(IP ,PUERTO, lista,'')
+                self.msn2clientserver(lista, linea, IP, PUERTO)
+
             elif 'BYE' in lista:
-                data = self.msn2clientserver(lista,linea, ip, PUERTO)
+                self.error(IP ,PUERTO, lista,'BYE')
+                data = self.msn2clientserver(lista,linea, IP, PUERTO)
                 self.wfile.write(data)
 
 
