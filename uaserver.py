@@ -27,7 +27,6 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 break
             linea = line.decode('utf-8')
             lista = linea.split()
-            print(lista)
 
             if 'Content-Type:' in lista:
                 info_user = {}
@@ -53,7 +52,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             elif 'ACK' in lista:
                 date_time(list, linea, 'receive', IP, PUERTO)
                 login = lista[1].split(':')[1]
-                listen = 'cvlc rtp://@' + ip + ':' + puerto
+                listen = 'cvlc rtp://@' + self.dicc[login]['ip'] + ':' + self.dicc[login]['puerto']
                 listen = listen + ' 2> /dev/null &'
                 os.system(listen)
                 rtp_msn = './mp32rtp -i ' + self.dicc[login]['ip'] + ' -p ' + self.dicc[login]['puerto']
