@@ -102,12 +102,13 @@ try:
 
     elif ('100 Trying' in response_msg and '180 Ring' in response_msg
         and '200 OK' in response_msg):
-        ip = response_msg.split(' ')[8].split('\r\n')[0]
-        puerto = response_msg.split(' ')[9]
+        ip = response_msg.split(' ')[10].split('\r\n')[0]
+        puerto = response_msg.split(' ')[11]
         date_time(response_msg, 'receive', IP, PORT)
         LINE = 'ACK' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0' + '\r\n'
         my_socket.send(bytes(LINE,'utf-8'))
         print('Enviando RTP')
+        time.sleep(0.1)
         rtp_msn = './mp32rtp -i ' +ip + ' -p ' + puerto
         rtp_msn = rtp_msn + ' < ' + list['audio']['path']
         os.system(rtp_msn)
