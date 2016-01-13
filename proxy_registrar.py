@@ -81,12 +81,22 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 PORT = int(self.dicc[user]['puerto'])
                 IP = self.dicc[user]['address']
                 self.date_time(linea, 'receive', IP, puerto)
+                line = 'Via: SIP/2.0/UDP real.com;branch=z9hG4bK776asdhds'
+                linea = linea.split('\r\n')
+                linea.insert(1, line)
+                linea = '\r\n'.join(linea)
                 my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 my_socket.connect((IP, PORT))
                 self.date_time(linea, 'send', IP, PORT)
                 my_socket.send(bytes(linea, 'utf-8') + b'\r\n')
                 data = my_socket.recv(1024)
+                linea = data.decode('utf-8')
+                line = 'Via: SIP/2.0/UDP real.com;branch=z9hG4bK776asdhds'
+                linea = linea.split('\r\n')
+                linea.insert(5, line)
+                linea = '\r\n'.join(linea)
+                data = bytes(linea, 'utf-8')
                 return data
                 my_socket.close()
             else:
@@ -115,12 +125,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         resp_proxy = m.hexdigest()
         return resp_proxy
 
-    def not_login (self, login, expires, IP, puerto):
-        if expires == '0' and not login in self.dicc:
-            LINE = ("SIP/2.0 404 Not Found (User not found)" + '\r\n')
-            self.date_time(LINE, 'send', IP, puerto)
-            self.wfile.write(bytes(LINE,'utf-8'))
-            return True
 
     def error(self, IP, PUERTO, lista, metodo):
         error = False
@@ -174,14 +178,13 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 LINE = 'SIP/2.0 405 Method Not Allowed'+'\r\n\r\n'
                 self.wfile.write(bytes(LINE, 'utf-8'))
                 self.date_time(LINE, 'send', IP, PUERTO)
+            self.tiempo_exp()
             if 'REGISTER' in lista:
                 login = lista[1].split(':')[1]
                 puerto = lista[1].split(':')[2]
                 expires = lista[4]
                 self.date_time(linea, 'receive', IP, PUERTO)
-                self.tiempo_exp()
-                if (not self.not_login(login, expires, IP, PUERTO) and not
-                  self.error(IP ,PUERTO, lista,'REGISTER')):
+                if (not self.error(IP ,PUERTO, lista,'REGISTER')):
                     if len(lista) >= 7 and lista[5].split(':')[0] == 'Authorization':
                         response = lista[7].split('=')[1].strip('"')
                         resp_proxy= self.response_equal(login)
@@ -192,9 +195,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                             self.date_time(LINE, 'send', IP, PUERTO)
                             self.wfile.write(bytes(LINE,'utf-8'))
 
-                        if expires == '0':
-                            if resp_proxy == response :
-                                del self.dicc[login]
                     else:
                         nonce = str(random.randint(0,10**20))
                         self.open_passwd()
