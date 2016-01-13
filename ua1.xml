@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <config>
-  <account username='ana@real.com' passwd='123456'></account>
-  <uaserver ip='127.0.0.1' puerto='9874'></uaserver>
+  <account username='ana@real.com' passwd='verde'></account>
+  <uaserver ip='127.0.0.1' puerto='6666'></uaserver>
   <rtpaudio puerto='2030'></rtpaudio>
-  <regproxy ip='' puerto='1234'></regproxy>
-  <log path='log.txt'></log>
+  <regproxy ip='127.0.0.1' puerto='1234'></regproxy>
+  <log path='log_ua1.txt'></log>
   <audio path='cancion.mp3'></audio>
 </config>
