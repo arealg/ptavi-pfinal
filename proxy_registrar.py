@@ -13,6 +13,19 @@ import random
 import socket
 import hashlib
 
+def date_time(self, linea, opcion, IP, PORT):
+    fichero = list['log']['path']
+    outfile = open(fichero, 'a')
+    fecha = time.strftime('%Y%m%d%H%M%S' , time.gmtime())
+    linea = linea.replace('\r\n\r\n', ' ')
+    linea = linea.replace('\r\n', ' ')
+    if opcion == 'send':
+        linea = 'Send to ' + IP + ':' + str(PORT) + ': ' + linea
+    elif opcion == 'receive':
+        linea = 'Received from ' + IP + ':' + str(PORT) + ': ' + linea
+    fecha = fecha + ' ' + linea + '\n'
+    outfile.write(fecha)
+    outfile.close()
 
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
@@ -59,19 +72,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         except:
             pass
 
-    def date_time(self, linea, opcion, IP, PORT):
-        fichero = list['log']['path']
-        outfile = open(fichero, 'a')
-        fecha = time.strftime('%Y%m%d%H%M%S' , time.gmtime())
-        linea = linea.replace('\r\n\r\n', ' ')
-        linea = linea.replace('\r\n', ' ')
-        if opcion == 'send':
-            linea = 'Send to ' + IP + ':' + str(PORT) + ': ' + linea
-        elif opcion == 'receive':
-            linea = 'Received from ' + IP + ':' + str(PORT) + ': ' + linea
-        fecha = fecha + ' ' + linea + '\n'
-        outfile.write(fecha)
-        outfile.close()
+
 
     dicc_bye = {}
     def msn2clientserver (self, lista, linea, IP, puerto):
