@@ -18,6 +18,7 @@ class EchoHandler(socketserver.DatagramRequestHandler):
     """
 
     dicc = {}
+
     def handle(self):
         IP = self.client_address[0]
         PUERTO = self.client_address[1]
@@ -34,22 +35,20 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 info_user['ip'] = lista[10]
                 self.dicc[lista[1].split(':')[1]] = info_user
 
-
             if 'INVITE' in lista:
                 date_time(list, linea, 'receive', IP, PUERTO)
                 msn = ('Content-Type: application/sdp' + '\r\n\r\n'
-                      + 'v=0' + '\r\n'
-                      + 'o=' + list['account']['username'] + ' '
-                      + list['uaserver']['ip'] + '\r\n'
-                      + 's=misesion' + '\r\n' + 't=0' + '\r\n' + 'm=audio '
-                      + list['rtpaudio']['puerto'] + ' ' + 'RTP' + '\r\n' )
+                       + 'v=0' + '\r\n'
+                       + 'o=' + list['account']['username'] + ' '
+                       + list['uaserver']['ip'] + '\r\n'
+                       + 's=misesion' + '\r\n' + 't=0' + '\r\n' + 'm=audio '
+                       + list['rtpaudio']['puerto'] + ' ' + 'RTP' + '\r\n')
                 LINE = ('SIP/2.0 100 Trying'
-                      + '\r\n\r\n' + 'SIP/2.0 180 Ring'
-                      + '\r\n\r\n' + 'SIP/2.0 200 OK' + '\r\n' + msn
-                      + '\r\n')
+                        + '\r\n\r\n' + 'SIP/2.0 180 Ringing'
+                        + '\r\n\r\n' + 'SIP/2.0 200 OK' + '\r\n' + msn
+                        + '\r\n')
                 self.wfile.write(bytes(LINE, 'utf-8'))
                 date_time(list, LINE, 'send', IP, PUERTO)
-
 
             elif 'ACK' in lista:
                 date_time(list, linea, 'receive', IP, PUERTO)
@@ -59,13 +58,13 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 listen = listen + ' 2> /dev/null &'
                 os.system(listen)
                 rtp_msn = './mp32rtp -i ' + self.dicc[login]['ip'] + ' -p '
-                rtp_msn = rtp_msn  + self.dicc[login]['puerto']
+                rtp_msn = rtp_msn + self.dicc[login]['puerto']
                 rtp_msn = rtp_msn + ' < ' + list['audio']['path']
                 os.system(rtp_msn)
 
             elif 'BYE' in lista:
                 date_time(list, linea, 'receive', IP, PUERTO)
-                LINE = 'SIP/2.0 200 OK'+ '\r\n\r\n'
+                LINE = 'SIP/2.0 200 OK' + '\r\n\r\n'
                 self.wfile.write(bytes(LINE, 'utf-8'))
                 date_time(list, LINE, 'send', IP, PUERTO)
 
