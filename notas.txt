@@ -1,0 +1,16 @@
+He implementado estos requisitos avanzados:
+  Cabecera proxy
+  Reestablecer usuarios conectados
+  Integración de (c)vlc
+  Consistencia frente a valores erróneos
+
+Para la cabecera proxy en el numero de branch he puesto uno fijo para todas las cabeceras, ya que
+entendi eso en el RFC 3261.
+En la integración del vcl le he puesto un & para dejarlo en segundo plano y poder seguir interectuando
+con la terminal.
+Para la consistencia frente a valores erroneos, he controlado varios errores, comprobar primero si todos los mensajes
+estan bien formados con 'sip:' y 'SIP/2.0'. En el REGISTER e INVITE compruebo si el puerto y la ip estan formados por numero enteros, elevo una
+excepcion con el error 400 Bad Request.
+En el BYE me aseguro de que los usuarios sean participes de la conversación, en el INVITE guardo los logins en un diccionario y con el login
+que recibo en el BYE compruebo que esta en el diccionario, si estan los borro si no salta un error 404 User not Found.
+Si el proxy no puede contactar con el Server que el Cliente pide, elevo el error 603 Decline.
